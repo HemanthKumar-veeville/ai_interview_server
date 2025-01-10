@@ -2,7 +2,8 @@ const {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  ListObjectsV2Command, // Added missing import
+  ListObjectsV2Command,
+  DeleteObjectCommand, // Added for deleting objects
 } = require("@aws-sdk/client-s3");
 const streamToBuffer = require("../utils/streamToBuffer");
 const dotenv = require("dotenv");
@@ -20,10 +21,13 @@ const s3Client = new S3Client({
 const mergeService = async (instanceId) => {
   try {
     // Validate required environment variables
-    if (!process.env.AWS_S3_BUCKET_NAME || !process.env.AWS_REGION) {
-      throw new Error(
-        "AWS_S3_BUCKET_NAME or AWS_REGION environment variables are not set."
-      );
+    if (
+      !process.env.AWS_S3_BUCKET_NAME ||
+      !process.env.AWS_REGION ||
+      !process.env.AWS_ACCESS_KEY_ID ||
+      !process.env.AWS_SECRET_ACCESS_KEY
+    ) {
+      throw new Error("Required environment variables are not set.");
     }
 
     // List all chunks under the instanceId folder
@@ -74,8 +78,8 @@ const mergeService = async (instanceId) => {
     // Merge all chunks into a single buffer
     const mergedBuffer = Buffer.concat(mergedChunks);
 
-    // Define the key for the merged file
-    const mergedKey = `merged/merged_${instanceId}_${Date.now()}.webm`;
+    // Define the key for the merged file in the same directory
+    const mergedKey = `AI-Interview-Videos/${instanceId}/merged_${Date.now()}.webm`;
 
     // Upload the merged file to S3
     const putParams = {
@@ -91,6 +95,23 @@ const mergeService = async (instanceId) => {
     await s3Client.send(new PutObjectCommand(putParams));
 
     console.log("Chunks merged and uploaded to S3:", mergedKey);
+
+    // Delete all chunks after merging
+    for (const chunk of Contents) {
+      const deleteParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Key: chunk.Key,
+      };
+
+      try {
+        await s3Client.send(new DeleteObjectCommand(deleteParams));
+        console.log(`Deleted chunk: ${chunk.Key}`);
+      } catch (error) {
+        console.error(`Error deleting chunk ${chunk.Key}:`, error);
+        // Continue deleting other chunks
+      }
+    }
+
     return mergedKey;
   } catch (error) {
     console.error("Error merging chunks:", error);
