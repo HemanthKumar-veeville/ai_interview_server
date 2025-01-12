@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const uploadRoutes = require("./routes/uploadRoutes");
 const mergeRoutes = require("./routes/mergeRoutes");
-// const filesRoutes = require("./routes/filesRoutes");
+const filesRoutes = require("./routes/filesRoutes");
 // const deleteRoutes = require("./routes/deleteRoutes");
 // const downloadRoutes = require("./routes/downloadRoutes");
 
@@ -24,7 +24,7 @@ app.use(express.json());
 // Routes
 app.use("/upload", uploadRoutes);
 app.use("/merge", mergeRoutes);
-// app.use("/files", filesRoutes);
+app.use("/files", filesRoutes);
 // app.use("/delete", deleteRoutes);
 // app.use("/download", downloadRoutes);
 

@@ -5,6 +5,7 @@ const {
   ListObjectsV2Command,
   DeleteObjectCommand,
 } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const streamToBuffer = require("../utils/streamToBuffer");
 const dotenv = require("dotenv");
 
@@ -44,13 +45,22 @@ const mergeService = async (instanceId) => {
       throw new Error("No chunks found for the given instanceId.");
     }
 
+    // Helper function to generate signed URL
+    const generateSignedUrl = async (key) => {
+      const getObjectCommand = new GetObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Key: key,
+      });
+      return await getSignedUrl(s3Client, getObjectCommand, { expiresIn: 300 });
+    };
+
     if (Contents.length === 1) {
-      // Single chunk case: return the key directly
+      // Single chunk case: return signed URL for the existing file
       const chunk = Contents[0];
-      console.log("Single chunk found, returning its key directly.");
-      return chunk.Key;
+      console.log("Single chunk found, returning signed URL.");
+      return await generateSignedUrl(chunk.Key);
     } else if (Contents.length > 1) {
-      // Multiple chunks case: merge and upload
+      // Multiple chunks case: merge, upload, and return signed URL
       // Sort chunks by key (if necessary)
       Contents.sort((a, b) => a.Key.localeCompare(b.Key));
 
@@ -94,8 +104,9 @@ const mergeService = async (instanceId) => {
         Key: mergedKey,
         Body: mergedBuffer,
         ContentType: "video/webm",
+        ACL: "public-read",
         Metadata: {
-          instanceId: instanceId, // Add instanceId as metadata
+          instanceId: instanceId,
         },
       };
 
@@ -119,7 +130,8 @@ const mergeService = async (instanceId) => {
         }
       }
 
-      return mergedKey;
+      // Return signed URL for the merged file
+      return await generateSignedUrl(mergedKey);
     }
   } catch (error) {
     console.error("Error processing chunks:", error);

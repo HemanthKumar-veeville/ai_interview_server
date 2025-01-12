@@ -11,6 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.726.1",
     "cors": "^2.8.5",
     "ffmpeg.js": "^4.2.9003",
     "file-type": "^19.6.0",
