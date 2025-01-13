@@ -115,7 +115,6 @@ const mergeService = async (instanceId) => {
         Key: mergedKey,
         Body: mergedBuffer,
         ContentType: "video/webm",
-        ACL: "public-read",
         Metadata: {
           instanceId: instanceId,
         },
