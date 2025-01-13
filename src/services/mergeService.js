@@ -19,6 +19,18 @@ const s3Client = new S3Client({
   },
 });
 
+const URL_EXPIRY = 3600; // 1 hour instead of 300 seconds
+
+const generateSignedUrl = async (key) => {
+  const getObjectCommand = new GetObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET_NAME,
+    Key: key,
+  });
+  return await getSignedUrl(s3Client, getObjectCommand, {
+    expiresIn: URL_EXPIRY,
+  });
+};
+
 const mergeService = async (instanceId) => {
   try {
     // Validate required environment variables
@@ -42,17 +54,16 @@ const mergeService = async (instanceId) => {
     );
 
     if (!Contents || Contents.length === 0) {
-      throw new Error("No chunks found for the given instanceId.");
+      throw new Error(`No video chunks found for instance ID: ${instanceId}`);
     }
 
-    // Helper function to generate signed URL
-    const generateSignedUrl = async (key) => {
-      const getObjectCommand = new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: key,
-      });
-      return await getSignedUrl(s3Client, getObjectCommand, { expiresIn: 300 });
-    };
+    // Add validation for file types
+    const invalidFiles = Contents.filter((file) => !file.Key.endsWith(".webm"));
+    if (invalidFiles.length > 0) {
+      throw new Error(
+        "Invalid file types detected. Only .webm files are supported."
+      );
+    }
 
     if (Contents.length === 1) {
       // Single chunk case: return signed URL for the existing file
@@ -114,28 +125,31 @@ const mergeService = async (instanceId) => {
 
       console.log("Chunks merged and uploaded to S3:", mergedKey);
 
-      // Delete all chunks after merging
+      // Add better error handling for chunk deletion
+      const deletionErrors = [];
       for (const chunk of Contents) {
-        const deleteParams = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: chunk.Key,
-        };
-
         try {
-          await s3Client.send(new DeleteObjectCommand(deleteParams));
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET_NAME,
+              Key: chunk.Key,
+            })
+          );
           console.log(`Deleted chunk: ${chunk.Key}`);
         } catch (error) {
-          console.error(`Error deleting chunk ${chunk.Key}:`, error);
-          // Continue deleting other chunks
+          deletionErrors.push({ key: chunk.Key, error: error.message });
         }
       }
 
-      // Return signed URL for the merged file
+      if (deletionErrors.length > 0) {
+        console.warn("Some chunks failed to delete:", deletionErrors);
+      }
+
       return await generateSignedUrl(mergedKey);
     }
   } catch (error) {
-    console.error("Error processing chunks:", error);
-    throw error;
+    console.error("Error in mergeService:", error);
+    throw new Error(`Merge operation failed: ${error.message}`);
   }
 };
 

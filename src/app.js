@@ -3,8 +3,8 @@ const cors = require("cors");
 const uploadRoutes = require("./routes/uploadRoutes");
 const mergeRoutes = require("./routes/mergeRoutes");
 const filesRoutes = require("./routes/filesRoutes");
+const downloadRoutes = require("./routes/downloadRoutes");
 // const deleteRoutes = require("./routes/deleteRoutes");
-// const downloadRoutes = require("./routes/downloadRoutes");
 
 const app = express();
 
@@ -26,7 +26,7 @@ app.use("/upload", uploadRoutes);
 app.use("/merge", mergeRoutes);
 app.use("/files", filesRoutes);
 // app.use("/delete", deleteRoutes);
-// app.use("/download", downloadRoutes);
+app.use("/download", downloadRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
