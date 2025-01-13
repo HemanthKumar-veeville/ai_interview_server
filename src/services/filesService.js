@@ -31,13 +31,39 @@ const filesService = async () => {
       return [];
     }
 
-    // Extract folder names from CommonPrefixes
-    const folders = CommonPrefixes.map((prefix) => {
-      const folderPath = prefix.Prefix;
-      return folderPath.split("/")[1]; // Get the folder name without the parent directory
-    }).filter(Boolean); // Remove any empty strings
+    // Get detailed information about each folder
+    const foldersWithDates = await Promise.all(
+      CommonPrefixes.map(async (prefix) => {
+        const folderParams = {
+          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Prefix: prefix.Prefix,
+          MaxKeys: 1,
+        };
 
-    return folders;
+        const response = await s3Client.send(
+          new ListObjectsV2Command(folderParams)
+        );
+        const folderName = prefix.Prefix.split("/")[1];
+
+        // If the folder is empty, use current date as fallback
+        const createdDate =
+          response.Contents && response.Contents[0]
+            ? response.Contents[0].LastModified
+            : new Date();
+
+        return {
+          name: folderName,
+          createdDate: createdDate,
+        };
+      })
+    );
+
+    // Sort folders by date in descending order and return both name and date
+    const sortedFolders = foldersWithDates
+      .sort((a, b) => b.createdDate - a.createdDate)
+      .filter((folder) => folder.name); // Remove any entries with empty names
+
+    return sortedFolders;
   } catch (error) {
     console.error("Error listing folders:", error);
     throw error;
