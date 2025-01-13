@@ -10,10 +10,13 @@ const app = express();
 
 // Configure CORS options
 const corsOptions = {
-  origin: "*", // Replace with your frontend's origin
-  methods: "GET,POST,PUT,DELETE,OPTIONS", // Allowed HTTP methods
-  allowedHeaders: "Content-Type,Authorization", // Allowed request headers
-  credentials: true, // Allow cookies or authentication headers
+  origin: function (origin, callback) {
+    // Allow all origins
+    callback(null, true);
+  },
+  methods: "GET,POST,PUT,DELETE,OPTIONS",
+  allowedHeaders: "Content-Type,Authorization",
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
