@@ -10,7 +10,7 @@ const app = express();
 
 // Configure CORS options
 const corsOptions = {
-  origin: ["http://localhost:8080", "https://ai-interview-videos.vercel.app"], // Replace with your frontend's origin
+  origin: "*", // Replace with your frontend's origin
   methods: "GET,POST,PUT,DELETE,OPTIONS", // Allowed HTTP methods
   allowedHeaders: "Content-Type,Authorization", // Allowed request headers
   credentials: true, // Allow cookies or authentication headers
