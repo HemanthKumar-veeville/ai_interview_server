@@ -4,7 +4,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const mergeRoutes = require("./routes/mergeRoutes");
 const filesRoutes = require("./routes/filesRoutes");
 const downloadRoutes = require("./routes/downloadRoutes");
-// const deleteRoutes = require("./routes/deleteRoutes");
+const deleteRoutes = require("./routes/deleteRoutes");
 
 const app = express();
 
@@ -28,7 +28,7 @@ app.use(express.json());
 app.use("/upload", uploadRoutes);
 app.use("/merge", mergeRoutes);
 app.use("/files", filesRoutes);
-// app.use("/delete", deleteRoutes);
+app.use("/delete", deleteRoutes);
 app.use("/download", downloadRoutes);
 
 // Health check endpoint
