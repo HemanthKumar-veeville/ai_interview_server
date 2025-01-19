@@ -72,8 +72,14 @@ const mergeService = async (instanceId) => {
       return await generateSignedUrl(chunk.Key);
     } else if (Contents.length > 1) {
       // Multiple chunks case: merge, upload, and return signed URL
-      // Sort chunks by key (if necessary)
-      Contents.sort((a, b) => a.Key.localeCompare(b.Key));
+      // Sort chunks by sequence number from the filename
+      Contents.sort((a, b) => {
+        const getSequenceNumber = (key) => {
+          const match = key.match(/_(\d+)\.webm$/);
+          return match ? parseInt(match[1]) : 0;
+        };
+        return getSequenceNumber(a.Key) - getSequenceNumber(b.Key);
+      });
 
       const mergedChunks = [];
 
