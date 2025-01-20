@@ -5,6 +5,8 @@ const mergeRoutes = require("./routes/mergeRoutes");
 const filesRoutes = require("./routes/filesRoutes");
 const downloadRoutes = require("./routes/downloadRoutes");
 const deleteRoutes = require("./routes/deleteRoutes");
+const applicantRoutes = require("./routes/applicantRoutes");
+const documentRoutes = require("./routes/documentRoutes");
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use("/merge", mergeRoutes);
 app.use("/files", filesRoutes);
 app.use("/delete", deleteRoutes);
 app.use("/download", downloadRoutes);
+app.use("/applicants", applicantRoutes);
+app.use("/documents", documentRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
